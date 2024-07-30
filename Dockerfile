@@ -1,4 +1,4 @@
-FROM hrishi2861/aeon:dev
+FROM 5hojib/aeon:railway
 
 WORKDIR /usr/src/app
 RUN chmod 777 /usr/src/app
