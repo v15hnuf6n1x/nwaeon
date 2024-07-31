@@ -1,4 +1,4 @@
-import requests
+uimport requests
 
 from hashlib import sha256
 from http.cookiejar import MozillaCookieJar
@@ -399,89 +399,68 @@ def uploadee(url):
 
 
 def terabox(url):
-    if not path.isfile('terabox.txt'):
-        raise DirectDownloadLinkException("ERROR: terabox.txt not found")
+    details = {'contents': [], 'title': '', 'total_size': 0}
+    folderPath = None  # Initialize folderPath
+
     try:
-        jar = MozillaCookieJar('terabox.txt')
-        jar.load()
-    except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-    cookies = {}
-    for cookie in jar:
-        cookies[cookie.name] = cookie.value
-    details = {'contents':[], 'title': '', 'total_size': 0}
-    details["header"] = ' '.join(f'{key}: {value}' for key, value in cookies.items())
+        response = requests.get(f"https://teraboxvideodownloader.nepcoderdevs.workers.dev/?url={url}")
+        response.raise_for_status()
+        _json = response.json()
 
-    def __fetch_links(session, dir_='', folderPath=''):
-        params = {
-            'app_id': '250528',
-            'jsToken': jsToken,
-            'shorturl': shortUrl
-            }
-        if dir_:
-            params['dir'] = dir_
-        else:
-            params['root'] = '1'
-        try:
-            _json = session.get("https://www.1024tera.com/share/list", params=params, cookies=cookies).json()
-        except Exception as e:
-            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-        if _json['errno'] not in [0, '0']:
-            if 'errmsg' in _json:
-                raise DirectDownloadLinkException(f"ERROR: {_json['errmsg']}")
-            else:
-                raise DirectDownloadLinkException('ERROR: Something went wrong!')
+        # Print the JSON response for debugging
+        #print(f"JSON Response: {_json}")
 
+        if 'response' not in _json:
+            raise DirectDownloadLinkException('ERROR: "response" key not found in JSON')
+
+        data = _json['response'][0]
+        resolutions = data.get("resolutions", {})
+        fast_download_link = resolutions.get("Fast Download", '')
+        thumbnail_url = data.get("thumbnail", '')
+        title = data.get("title", '')
+
+        details['title'] = title
+        details['contents'].append({
+            'url': fast_download_link,
+            'filename': title,
+            'path': path.join(title),
+        })
         if "list" not in _json:
-            return
+            return details  # Return empty details if "list" key is not present
+
         contents = _json["list"]
         for content in contents:
-            if content['isdir'] in ['1', 1]:
+            if content.get('isdir', 0) in ['1', 1]:
                 if not folderPath:
                     if not details['title']:
-                        details['title'] = content['server_filename']
-                        newFolderPath = path.join(details['title'])
-                    else:
-                        newFolderPath = path.join(details['title'], content['server_filename'])
+                        details['title'] = content['title']  # from _json
+                    newFolderPath = path.join(details['title'])
                 else:
-                    newFolderPath = path.join(folderPath, content['server_filename'])
-                __fetch_links(session, content['path'], newFolderPath)
+                    newFolderPath = path.join(folderPath, content['title'])
             else:
                 if not folderPath:
                     if not details['title']:
-                        details['title'] = content['server_filename']
+                        details['title'] = content['title']  # from _json
                     folderPath = details['title']
                 item = {
-                    'url': content['dlink'],
-                    'filename': content['server_filename'],
-                    'path' : path.join(folderPath),
+                    'url': content.get('url', ''),
+                    'filename': content['title'],
+                    'path': path.join(folderPath),
                 }
+                print(item)
                 if 'size' in content:
                     size = content["size"]
                     if isinstance(size, str) and size.isdigit():
                         size = float(size)
                     details['total_size'] += size
                 details['contents'].append(item)
+                print(f'line 66 : {details}')
 
-    with Session() as session:
-        try:
-            _res = session.get(url, cookies=cookies)
-        except Exception as e:
-            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-        if jsToken := findall(r'window\.jsToken.*%22(.*)%22', _res.text):
-            jsToken = jsToken[0]
-        else:
-            raise DirectDownloadLinkException('ERROR: jsToken not found!.')
-        shortUrl = parse_qs(urlparse(_res.url).query).get('surl')
-        if not shortUrl:
-            raise DirectDownloadLinkException("ERROR: Could not find surl")
-        try:
-            __fetch_links(session)
-        except Exception as e:
-            raise DirectDownloadLinkException(e)
-    if len(details['contents']) == 1:
-        return details['contents'][0]['url']
-    return details
+        return details
+
+    except Exception as e:
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} - {str(e)}')
+
 
 
 def appflix(url):
