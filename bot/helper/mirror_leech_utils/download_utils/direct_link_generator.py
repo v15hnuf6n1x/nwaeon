@@ -83,6 +83,8 @@ domain_dict = {
                      'momerybox',
                      'teraboxapp',
                      '1024tera',
+                     'freeterabox',
+                     'teraboxlink',
                      'terabox.app'],
     'filewish':     ['filelions.co',
                      'filelions.site',
