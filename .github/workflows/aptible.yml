@@ -2,7 +2,7 @@ name: aptible
 
 on:
   push:
-    branches: [deploy]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       uses: aptible/aptible-deploy-action@v4
       with:
         type: git
-        app: me0n
-        environment: holip
+        app: one
+        environment: mlo
         username: ${{ secrets.APTIBLE_USERNAME }}
         password: ${{ secrets.APTIBLE_PASSWORD }}
