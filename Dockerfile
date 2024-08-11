@@ -1,4 +1,4 @@
-FROM v15hnuf6n1x/aeon:dev
+FROM 5hojib/aeon:dev
 
 WORKDIR /usr/src/app
 RUN chmod 777 /usr/src/app
@@ -8,5 +8,5 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8080
+£EXPOSE 8080
 CMD ["bash", "start.sh"]
